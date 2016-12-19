@@ -1,16 +1,15 @@
 ﻿
 // /Tasuki -/ 実行環境。インタープリタだけでなく、コンパイルにも使えるように書いたつもり、、、
 
-#include <fstream>
-#include <iostream>
-#include <iomanip>
+//#include <fstream>
+//#include <iostream>
+//#include <iomanip>
 
-#include <sstream>
+#include <sstream>  // std::stringstream
 
 #include <string>
 #include <vector>
 #include <list>
-
 #include <map>
 
 #include <iostream> // std::cout
@@ -433,6 +432,7 @@ public:
 public:
     Value & get_idx_value( int _idx )
     {
+        // 念のため、範囲チェック
         if ( _idx < 0 )
         {
             PROGRAM_ERROR( "g_stack idx < 0" ) ; 
