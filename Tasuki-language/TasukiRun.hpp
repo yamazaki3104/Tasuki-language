@@ -138,7 +138,7 @@ public:
     }
 
     //-----------------------------------------------------
-    // 
+    // unknown_typeの場合は tag なはずなので、tagを探してコピーする（コピーしてよいかどうかは別問題として）
 public:
     bool find_tag()
     {
@@ -168,7 +168,7 @@ public:
             }
         }}
 
-        return false ; // NG
+        return false ; // NG みつからない
     }
 
     //-----------------------------------------------------
@@ -706,8 +706,6 @@ int  f_operator(
     const std::string &  _a = _in[2] ;
     const std::string &  _b = _in[3] ;
 
-    g_stack.push() ;
-
     int idx_a = t_code_to_value( _a ) ;
     if ( idx_a < 0 ) return idx_a ; // NG
 
@@ -715,6 +713,79 @@ int  f_operator(
 
     a.find_tag() ;      // unknown_type の場合は tag_search() して置き換える
     a.eval() ;          // 未評価の t_code や stream を評価して値にする
+
+    if ( a.m_type == "str" )
+    {
+        if ( _symbol != "+" )
+            return RUNTIME_ERROR( "Not supported operators. '" +_symbol + "'" ) ; // "NG: operator : program error"; // 知らない演算子
+
+        int idx_b = t_code_to_value( _b ) ;
+        if ( idx_b < 0 ) return idx_b ; // NG
+
+        Value & b = g_stack.get_idx_value( idx_b ) ;
+
+        b.find_tag() ;      // unknown_type の場合は tag_search() して置き換える
+        b.eval() ;          // 未評価の t_code や stream を評価して値にする
+
+        int idx_v = t_code_to_value( a.m_str + b.m_str ) ;
+        if ( idx_v < 0 ) return idx_v ; // NG
+
+        Value & v = g_stack.get_idx_value( idx_v ) ;
+
+        v.d += "[operator +]" ; // デバッグ用なので、リリース時には消します。 todo
+
+        return v.m_idx ; // "OK: operator" ;
+    }
+    if ( a.m_type == "float" )
+    {
+        int idx_b = t_code_to_value( _b ) ;
+        if ( idx_b < 0 ) return idx_b ; // NG
+
+        Value & b = g_stack.get_idx_value( idx_b ) ;
+
+        b.find_tag() ;      // unknown_type の場合は tag_search() して置き換える
+        b.eval() ;          // 未評価の t_code や stream を評価して値にする
+
+        if ( b.m_type != "float" )
+            return RUNTIME_ERROR( "operator unmatch type. " << _b ) ; // "NG: operator : Value 
+
+        long double da = 0.0 ;
+        long double db = 0.0 ;
+        try {
+            da = std::stold( a.m_str );
+            db = std::stold( b.m_str );
+        }
+        catch ( const std::invalid_argument& e )
+        {
+            return PROGRAM_ERROR( "" ) ; // 文字列を long double に変換できない
+        }
+
+        std::stringstream   no ;
+
+        if      ( _symbol == "*"   ) no << ( da * db ) ;
+        else if ( _symbol == "-/-" ) no << ( da / db ) ;
+        else if ( _symbol == "+"   ) no << ( da + db ) ;
+        else if ( _symbol == "-"   ) no << ( da - db ) ;
+        else
+            return RUNTIME_ERROR( "Not supported operators." ) ; // "NG: operator : program error"; // 知らない演算子
+
+        // 小数点以下がゼロの場合、「.0」を追加
+        std::string s = no.str() ;
+
+        if ( s.find( "." ) == std::string::npos )
+            s += ".0" ; 
+
+        int idx_v = t_code_to_value( s ) ;
+        if ( idx_v < 0 ) return idx_v ; // NG
+
+        Value & v = g_stack.get_idx_value( idx_v ) ;
+
+        v.m_type = "float" ;
+
+        v.d += "[operator " + _symbol + "]" ; // デバッグ用なので、リリース時には消します。 todo
+
+        return v.m_idx ; // "OK: operator" ;
+    }
 
     if ( a.m_type != "int" )
         if ( a.m_type != "stream" ) // 暫定的に stream もOKとする
@@ -728,8 +799,9 @@ int  f_operator(
     b.find_tag() ;      // unknown_type の場合は tag_search() して置き換える
     b.eval() ;          // 未評価の t_code や stream を評価して値にする
 
+
     if ( b.m_type != "int" )
-        if ( a.m_type != "stream" ) // 暫定的に stream もOKとする
+        if ( b.m_type != "stream" ) // 暫定的に stream もOKとする
             return RUNTIME_ERROR( "operator unmatch type. " << _b ) ; // "NG: operator : Value error" ; // 数字に変換できなかった 例外を投げる todo
 
     std::stringstream   no ;
@@ -740,9 +812,7 @@ int  f_operator(
     else if ( _symbol == "+"   ) no << ( a.m_num + b.m_num ) ;
     else if ( _symbol == "-"   ) no << ( a.m_num - b.m_num ) ;
     else
-        return PROGRAM_ERROR( "Not supported operators." ) ; // "NG: operator : program error"; // 知らない演算子
-
-    g_stack.pop() ;
+        return RUNTIME_ERROR( "Not supported operators." ) ; // "NG: operator : program error"; // 知らない演算子
 
     int idx_v = t_code_to_value( no.str() ) ;
     if ( idx_v < 0 ) return idx_v ; // NG
@@ -752,7 +822,7 @@ int  f_operator(
     v.find_tag() ;
     v.eval() ;                  // 未評価の t_code や stream を評価して値にする
 
-    v.d += "[operator]" ; // デバッグ用なので、リリース時には消します。 todo
+    v.d += "[operator " + _symbol + "]" ; // デバッグ用なので、リリース時には消します。 todo
 
     return v.m_idx ; // "OK: operator" ;
 }
@@ -915,6 +985,22 @@ int  f_each(
     return PROGRAM_ERROR( "NG: Unsupported type." ) ;
 }
 
+
+//---------------------------------------------------------
+inline
+bool  is_number(
+    const std::string &  _str
+)
+{
+    for( int it : _str )
+    {{
+        if ( it < '0' ) return false ;
+        if ( it > '9' ) return false ;
+    }}
+
+    return true ;
+}
+
 //---------------------------------------------------------
 inline
 int  f_match(
@@ -977,7 +1063,7 @@ int  f_match(
         return  a.m_idx ; // "OK: match" ;
     }
 
-    if ( _b == "0" ) // 暫定対応 todo ホントは数字だったら
+    if ( is_number( _b ) == true ) // 数字だったら
     {
         int idx_a = t_code_to_value( _a ) ;
         if ( idx_a < 0 ) return idx_a ; // NG
@@ -989,7 +1075,7 @@ int  f_match(
 
         if ( a.m_type == "int" )
         {
-            a.m_str = a.m_str + ".0" ; // 暫定対応 todo
+            a.m_str = a.m_str + "." + _b ;
             a.m_type = "float" ;
 
             a.d += "[" + _a + "." + _b + ":match]" ; // デバッグ用なので、リリース時には消します。 todo
@@ -999,9 +1085,6 @@ int  f_match(
     }
     else if ( _b == "float" )
     {
-        g_stack.push_boss() ;
-        g_stack.push() ;
-
         int idx_a = t_code_to_value( _a ) ;
         if ( idx_a < 0 ) return idx_a ; // NG
 
@@ -1016,13 +1099,23 @@ int  f_match(
             a.m_type = "float" ;
             a.d += "[" + _a + "." + _b + ":match]" ; // デバッグ用なので、リリース時には消します。 todo
 
-            g_stack.pop() ;
-            g_stack.pop_boss() ;
-
             return  a.m_idx ; // "OK: match" ;
         }
-        g_stack.pop() ;
-        g_stack.pop_boss() ;
+    }
+    else if ( _b == "str" )
+    {
+        int idx_a = t_code_to_value( _a ) ;
+        if ( idx_a < 0 ) return idx_a ; // NG
+
+        Value & a = g_stack.get_idx_value( idx_a ) ;
+
+        a.find_tag() ;      // unknown_type の場合は tag_search() して置き換える
+        a.eval() ;          // 未評価の t_code や stream を評価して値にする
+
+        a.m_type = "str" ;
+        a.d += "[" + _a + "." + _b + ":match]" ; // デバッグ用なので、リリース時には消します。 todo
+
+        return  a.m_idx ; // "OK: match" ;
     }
 
     int idx_a = t_code_to_value( _a ) ;
@@ -1153,9 +1246,6 @@ int  f_list(
     const std::vector< std::string > &  _in
 )
 {
-    if ( _in.size() <= 1 )
-        return PROGRAM_ERROR( "param size mismatch." ) ;
-
     Value & out = g_stack.alloc_value() ;
 
     out.d += "[list]" ; // デバッグ用なので、リリース時には消します。 todo
@@ -1180,15 +1270,12 @@ int  f_stream(
     const std::vector< std::string > &  _in
 )
 {
-    if ( _in.size() <= 1 )
-        return PROGRAM_ERROR( "param size mismatch." ) ;
-
     Value & out = g_stack.alloc_value() ;
 
     out.d += "[stream]" ; // デバッグ用なので、リリース時には消します。 todo
 
     out.m_type = "stream" ;
-    out.m_str = "{ "; // dummy todo
+    out.m_str = "[ ]" ; // dummy todo
 
     // to_be_evaluated_list
     for ( auto & it : _in )
@@ -1196,6 +1283,7 @@ int  f_stream(
         if ( it == "stream" ) continue ;
 
         out.m_to_be_evaluated_list.push_back( it ) ;
+        out.m_str = it ; // dummy todo
     }}
 
     return out.m_idx ; // "OK: stream" ;

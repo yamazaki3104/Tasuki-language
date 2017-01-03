@@ -8,11 +8,11 @@
 #include <cassert> // assert()
 
 //---------------------------------------------------------
+// 単体テストコード
 
 int unit_test()
 {
     //----------------
-    // 単体テストから
     {
         TasukiParseSyntax syn( "a : 123" ) ;    // 構文解析
 
@@ -514,7 +514,194 @@ int unit_test()
         assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
     }
 
+    //----------------
+    {
+        TasukiParseSyntax syn(
+            "/.co <- 'HelloTasuki'"
+        ) ;
 
+        assert( syn.syntax == "[push [match / co ] 'HelloTasuki' ]" ) ;
+
+        TasukiInterpreter ti( syn.syntax ) ;
+
+        std::cout << ti.interpret() << "\n" ; // 実行
+
+        assert( g_co_str == "HelloTasuki" ) ;
+
+        assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
+        assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
+    }
+    
+    //----------------
+    {
+        TasukiParseSyntax syn(
+            "/.co <- 1 + 2               ---> 3    --- 整数で計算されます\n"
+        ) ;
+
+        assert( syn.syntax == "[push [match / co ] [operator + 1 2 ] ]" ) ;
+
+        TasukiInterpreter ti( syn.syntax ) ;
+
+        std::cout << ti.interpret() << "\n" ; // 実行
+
+        assert( g_co_str == "3" ) ;
+
+        assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
+        assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
+    }
+
+    //----------------
+    {
+        TasukiParseSyntax syn(
+            "/.co <- 1.str + 2           ---> 12   --- 文字列として連結されます\n"
+        ) ;
+
+        assert( syn.syntax == "[push [match / co ] [operator + [match 1 str ] 2 ] ]" ) ;
+
+        TasukiInterpreter ti( syn.syntax ) ;
+
+        std::cout << ti.interpret() << "\n" ; // 実行
+
+        assert( g_co_str == "12" ) ;
+
+        assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
+        assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
+    }
+
+    //----------------
+    {
+        TasukiParseSyntax syn(
+            "/.co <- 1.float + 2.float   ---> 3.0  --- 実数で計算されます\n"
+        ) ;
+
+        assert( syn.syntax == "[push [match / co ] [operator + [match 1 float ] [match 2 float ] ] ]" ) ;
+
+        TasukiInterpreter ti( syn.syntax ) ;
+
+        std::cout << ti.interpret() << "\n" ; // 実行
+
+        assert( g_co_str == "3.0" ) ;
+
+        assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
+        assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
+    }
+
+    //----------------
+    {
+        TasukiParseSyntax syn(
+            "/.co <- 1.0 + 2.0           ---> 3.0  --- 実数で計算されます\n"
+            "/.co <- 1.5 + 2.5           ---> 4.0  --- 実数で計算されます\n"
+        ) ;
+
+        assert( syn.syntax == "[push [match / co ] [operator + [match 1 0 ] [match 2 0 ] ] ] [push [match / co ] [operator + [match 1 5 ] [match 2 5 ] ] ]" ) ;
+
+        TasukiInterpreter ti( syn.syntax ) ;
+
+        std::cout << ti.interpret() << "\n" ; // 実行
+
+        assert( g_co_str == "3.04.0" ) ;
+
+        assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
+        assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
+    }
+
+    //----------------
+    {
+        TasukiParseSyntax syn(
+            "/.co <- 'Hello'         ---> Hello\n"
+            "/.co <- 'Hello'.type    ---> str\n"
+        ) ;
+
+        assert( syn.syntax == "[push [match / co ] 'Hello' ] [push [match / co ] [match 'Hello' type ] ]" ) ;
+
+        TasukiInterpreter ti( syn.syntax ) ;
+
+        std::cout << ti.interpret() << "\n" ; // 実行
+
+        assert( g_co_str == "Hellostr" ) ;
+
+        assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
+        assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
+    }
+
+    //----------------
+    {
+        TasukiParseSyntax syn(
+            "/.co <- 0               ---> 0\n"
+            "/.co <- 0.type          ---> int\n"
+            "/.co <- 0.str.type      ---> str\n"
+            "/.co <- 0.0.type        ---> float\n"
+            "/.co <- 0.float.type    ---> float\n"
+        ) ;
+
+        assert( syn.syntax == "[push [match / co ] 0 ] [push [match / co ] [match 0 type ] ] [push [match / co ] [match [match 0 str ] type ] ] [push [match / co ] [match [match 0 0 ] type ] ] [push [match / co ] [match [match 0 float ] type ] ]" ) ;
+
+        TasukiInterpreter ti( syn.syntax ) ;
+
+        std::cout << ti.interpret() << "\n" ; // 実行
+
+        assert( g_co_str == "0intstrfloatfloat" ) ;
+
+        assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
+        assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
+    }
+
+    //----------------
+    {
+        TasukiParseSyntax syn(
+            "/.co <- [ ]             ---> [ ]\n"
+            "/.co <- [ ].type        ---> list \n"
+            "/.co <- [ 0 1 ]         ---> [ 0 1 ]\n"
+            "/.co <- [ 0 1 ].type    ---> list \n"
+        ) ;
+
+        assert( syn.syntax == "[push [match / co ] [list  ] ] [push [match / co ] [match [list  ] type ] ] [push [match / co ] [list 0 1 ] ] [push [match / co ] [match [list 0 1 ] type ] ]" ) ;
+
+        TasukiInterpreter ti( syn.syntax ) ;
+
+        std::cout << ti.interpret() << "\n" ; // 実行
+
+        assert( g_co_str == "[ ]list[ ]list" ) ;
+
+        assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
+        assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
+    }
+
+    //----------------
+    {
+        TasukiParseSyntax syn(
+            "/.co <- { }             ---> [ ]\n"
+            "/.co <- { }.type        ---> stream\n"
+            "/.co <- { 0 1 }         ---> 1\n"
+            "/.co <- { 0 1 }.type    ---> stream\n"
+        ) ;
+
+        assert( syn.syntax == "[push [match / co ] [stream  ] ] [push [match / co ] [match [stream  ] type ] ] "
+            "[push [match / co ] [stream 0 1 ] ] [push [match / co ] [match [stream 0 1 ] type ] ]" ) ;
+
+        TasukiInterpreter ti( syn.syntax ) ;
+
+        std::cout << ti.interpret() << "\n" ; // 実行
+
+        assert( g_co_str == "[ ]stream1stream" ) ;
+
+        assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
+        assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
+    }
+
+    /*
+
+    "/.co <- true            ---> -true\n"
+    "/.co <- true.type       ---> bool\n"
+    "/.co <- [ ]             ---> [ ]\n"
+    "/.co <- [ ].type        ---> list \n"
+    "/.co <- [ 0 1 ]         ---> [ 0 1 ]\n"
+    "/.co <- [ 0 1 ].type    ---> list \n"
+    "/.co <- { }             ---> [ ]\n"
+    "/.co <- { }.type        ---> stream\n"
+    "/.co <- { 0 1 }         ---> 1\n"
+    "/.co <- { 0 1 }.type    ---> stream\n"
+    */
 
     // boss.fact : ( n : boss (if n <= 1 ?? 1 !! n * ( n - 1 ).fact ) )
 
