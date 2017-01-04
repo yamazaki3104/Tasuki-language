@@ -30,7 +30,6 @@ class TasukiParseSyntax
                 "input-code\n"
                 "==========\n" << _ti_code << "\n";
 
-
             //---------------------------------------------------------
             // 構文解析　perse_token
             /*
@@ -57,7 +56,6 @@ class TasukiParseSyntax
                     '\' バックスラッシュ
 
                 コメントに使う
-                    '-'
                     '\n'
             */
             std::string  perse_token ;
@@ -91,7 +89,6 @@ class TasukiParseSyntax
                         '\\',    // バックスラッシュ
 
                         // コメントに使う
-                        '-',
                         '\n'
                     } ;
 
@@ -171,7 +168,8 @@ class TasukiParseSyntax
                     char mode = '-' ;
                     for ( size_t j=0 ; j<code_max ; j++ )
                     {{
-                        if ( parse3[j] == '-' && j+1<code_max && parse3[j+1] == '-' )
+                        // '--' を探す
+                        if (  j+1<code_max && parse3[j] == 'A' && _ti_code[j] == '-' && parse3[j+1] == 'A' && _ti_code[j+1] == '-' )
                             mode = 'c' ;
 
                         if ( parse3[j] == '\n' )

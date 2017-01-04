@@ -117,11 +117,10 @@ int unit_test()
     }
 
     //----------------
-    /* -true が未サポート
     {
         TasukiParseSyntax syn( "/.co <- (if -true ?? 'true' !! 'false' )" ) ;    // 構文解析
 
-        assert( syn.syntax == "[push [match / co ] [if [scope true ] [scope 'true' ] [scope 'false' ] ] ]" ) ;
+        assert( syn.syntax == "[push [match / co ] [if [scope -true ] [scope 'true' ] [scope 'false' ] ] ]" ) ;
 
         TasukiInterpreter ti( syn.syntax ) ;
 
@@ -131,7 +130,26 @@ int unit_test()
 
         assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
         assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
-    }*/
+    }
+
+    //----------------
+    {
+        TasukiParseSyntax syn(
+            "/.co <- 2 == 5 \n"
+            "/.co <- (if 2 == 5 ?? 'true' !! 'false' )\n"
+        ) ;    // 構文解析
+
+        assert( syn.syntax == "[push [match / co ] [compare == 2 5 ] ] [push [match / co ] [if [scope [compare == 2 5 ] ] [scope 'true' ] [scope 'false' ] ] ]" ) ;
+
+        TasukiInterpreter ti( syn.syntax ) ;
+
+        std::cout << ti.interpret() << "\n" ; // 実行
+
+        assert( g_co_str == "-falsefalse" ) ;
+
+        assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
+        assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
+    }
 
     //----------------
     {
@@ -641,6 +659,27 @@ int unit_test()
         std::cout << ti.interpret() << "\n" ; // 実行
 
         assert( g_co_str == "0intstrfloatfloat" ) ;
+
+        assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
+        assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
+    }
+
+    //----------------
+    {
+        TasukiParseSyntax syn(
+            "/.co <- -true             ---> -true\n"
+            "/.co <- -true.type        ---> bool\n"
+            "/.co <- -false            ---> -false\n"
+            "/.co <- -false.type       ---> bool\n"
+        ) ;
+
+        assert( syn.syntax == "[push [match / co ] -true ] [push [match / co ] [match -true type ] ] [push [match / co ] -false ] [push [match / co ] [match -false type ] ]" ) ;
+
+        TasukiInterpreter ti( syn.syntax ) ;
+
+        std::cout << ti.interpret() << "\n" ; // 実行
+
+        assert( g_co_str == "-truebool-falsebool" ) ;
 
         assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
         assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
