@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tasuki-language", "Tasuki-l
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CompileTest", "CompileTest\CompileTest.vcxproj", "{D6FAEB6E-C116-44B5-906D-B1585BA29563}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "unit-test-2", "unit-test-2\unit-test-2.vcxproj", "{8B921CC7-E773-4EFF-853A-3C5950D046C3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{D6FAEB6E-C116-44B5-906D-B1585BA29563}.Release|x64.Build.0 = Release|x64
 		{D6FAEB6E-C116-44B5-906D-B1585BA29563}.Release|x86.ActiveCfg = Release|Win32
 		{D6FAEB6E-C116-44B5-906D-B1585BA29563}.Release|x86.Build.0 = Release|Win32
+		{8B921CC7-E773-4EFF-853A-3C5950D046C3}.Debug|x64.ActiveCfg = Debug|x64
+		{8B921CC7-E773-4EFF-853A-3C5950D046C3}.Debug|x64.Build.0 = Debug|x64
+		{8B921CC7-E773-4EFF-853A-3C5950D046C3}.Debug|x86.ActiveCfg = Debug|Win32
+		{8B921CC7-E773-4EFF-853A-3C5950D046C3}.Debug|x86.Build.0 = Debug|Win32
+		{8B921CC7-E773-4EFF-853A-3C5950D046C3}.Release|x64.ActiveCfg = Release|x64
+		{8B921CC7-E773-4EFF-853A-3C5950D046C3}.Release|x64.Build.0 = Release|x64
+		{8B921CC7-E773-4EFF-853A-3C5950D046C3}.Release|x86.ActiveCfg = Release|Win32
+		{8B921CC7-E773-4EFF-853A-3C5950D046C3}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

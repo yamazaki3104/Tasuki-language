@@ -728,19 +728,6 @@ int unit_test()
         assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
     }
 
-    /*
-
-    "/.co <- true            ---> -true\n"
-    "/.co <- true.type       ---> bool\n"
-    "/.co <- [ ]             ---> [ ]\n"
-    "/.co <- [ ].type        ---> list \n"
-    "/.co <- [ 0 1 ]         ---> [ 0 1 ]\n"
-    "/.co <- [ 0 1 ].type    ---> list \n"
-    "/.co <- { }             ---> [ ]\n"
-    "/.co <- { }.type        ---> stream\n"
-    "/.co <- { 0 1 }         ---> 1\n"
-    "/.co <- { 0 1 }.type    ---> stream\n"
-    */
 
     // boss.fact : ( n : boss (if n <= 1 ?? 1 !! n * ( n - 1 ).fact ) )
 
