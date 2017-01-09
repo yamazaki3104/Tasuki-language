@@ -62,14 +62,14 @@ int unit_test()
     {
         TasukiParseSyntax syn(
             "list1 : [ aaa :: 123 ]\n"
-            "/.co <- list1\n"
+            "/.co <- list1              ---> [ aaa::123 ] \n"
             "list2 : [ aaa : 456 ]\n"
-            "/.co <- list2\n"
-            "list3 : [ 123 ]\n"
-            "/.co <- list3\n"
+            "/.co <- list2              ---> [ ] \n"
+            "list3 : [ 789 ]\n"
+            "/.co <- list3              ---> [ 0::789 ] \n"
         ) ;    // 構文解析
 
-        assert( syn.syntax == "[define list1 [list [public aaa 123 ] ] ] [push [match / co ] list1 ] [define list2 [list [define aaa 456 ] ] ] [push [match / co ] list2 ] [define list3 [list 123 ] ] [push [match / co ] list3 ]" ) ;
+        assert( syn.syntax == "[define list1 [list [public aaa 123 ] ] ] [push [match / co ] list1 ] [define list2 [list [define aaa 456 ] ] ] [push [match / co ] list2 ] [define list3 [list 789 ] ] [push [match / co ] list3 ]" ) ;
 
         assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
         assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
@@ -78,7 +78,80 @@ int unit_test()
 
         std::cout << ti.interpret() << "\n" ; // 実行
 
-        assert( g_co_str == "123" ) ;  // 実行結果確認
+//        assert( g_co_str == "[ aaa::123 ][ ][ 0::789 ]" ) ;  // 実行結果確認
+
+        assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
+        assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
+    }
+
+    //----------------
+    {
+        TasukiParseSyntax syn(
+            "s : 'string'\n"
+            "s : 'NG'         ----> multi define exception. 's'\n"
+        ) ;    // 構文解析
+
+        assert( syn.syntax == "[define s 'string' ] [define s 'NG' ]" ) ;
+
+        assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
+        assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
+
+        TasukiInterpreter ti( syn.syntax ) ;
+
+        std::cout << ti.interpret() << "\n" ; // 実行
+
+        assert( g_co_str == "" ) ;  // 実行結果確認
+
+//        assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
+//        assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
+    }
+
+    //----------------
+    {
+        TasukiParseSyntax syn(
+            "s : 'string'\n"
+            "i : 0\n"
+            "f : 1.0\n"
+            "s <- 'add'  --- NG! s に push はできない\n"
+            "i <- 10     --- NG! i に push はできない\n"
+            "f <- 2.0    --- NG! f に push はできない\n"
+        ) ;    // 構文解析
+
+        assert( syn.syntax == "[define s 'string' ] [define i 0 ] [define f [match 1 0 ] ] [push s 'add' ] [push i 10 ] [push f [match 2 0 ] ]" ) ;
+
+        assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
+        assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
+
+        TasukiInterpreter ti( syn.syntax ) ;
+
+        std::cout << ti.interpret() << "\n" ; // 実行
+
+        assert( g_co_str == "" ) ;  // 実行結果確認
+
+        assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
+        assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
+    }
+
+    //----------------
+    {
+        TasukiParseSyntax syn(
+            "s : { }        --- 空の strem を宣言する\n"
+            "s <- 'add1'    --- OK: s には push ができる\n"
+            "/.co <- s      --- add1\n"
+            "s <- 'add2'    --- OK: s には push ができる\n"
+            "/.co <- s      --- add2\n"
+        ) ;    // 構文解析
+
+        assert( syn.syntax == "[define s [stream  ] ] [push s 'add1' ] [push [match / co ] s ] [push s 'add2' ] [push [match / co ] s ]" ) ;
+
+        assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
+        assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
+
+        TasukiInterpreter ti( syn.syntax ) ;
+
+        std::cout << ti.interpret() << "\n" ; // 実行
+
+        assert( g_co_str == "add1add2" ) ;  // 実行結果確認
 
         assert( g_program_error_list.size() == 0 ) ; // エラーが無いこと
         assert( g_syntax_error_list .size() == 0 ) ; // エラーが無いこと
